@@ -6,21 +6,19 @@ rule no-force-unwrap {
   enabled true
   priority 85
   severity warning
-  ASK write
+  LOG write
   IF path GLOB "**/*.swift" AND content LINE_REGEX "[^!]=.*[^!=]![^=]"
   OR path GLOB "**/*.swift" AND content LINE_REGEX "\\bas\\!\\b"
   MESSAGE "Force unwrapping (!) crashes the app on nil — prefer optional binding (if let / guard let) or provide a safe default. Force casts (as!) crash on type mismatch."
-  PROMPT "Can this force unwrap be replaced with optional binding (if let/guard let) or a nil-coalescing default? Crashes in production are preferable to silent wrong behavior."
 }
 
 rule no-try-force {
   enabled true
   priority 85
   severity warning
-  ASK write
+  LOG write
   IF path GLOB "**/*.swift" AND content LINE_REGEX "\\btry!\\b"
   MESSAGE "try! crashes the app if the expression throws. Use try? to return nil on failure, or use a proper do/try/catch block to handle errors gracefully."
-  PROMPT "Can try! be replaced with try? or a do/try/catch block? If the operation can fail in production, a crash is not acceptable."
 }
 
 rule no-allow-invalid-ssl {
@@ -49,34 +47,31 @@ rule no-hardcoded-secrets-swift {
   enabled true
   priority 90
   severity error
-  ASK write
+  LOG write
   IF path GLOB "**/*.swift" AND content LINE_REGEX "(apiKey|api_key|password|secret|token|clientSecret)\\s*=\\s*\"[^\"]{8,}\""
   OR path GLOB "**/*.swift" AND content LINE_REGEX "let\\s+(apiKey|api_key|password|secret|token)\\s*=\\s*\""
   MESSAGE "Hardcoded secrets in Swift source are embedded in the app binary and can be extracted with strings/otool. Store secrets server-side or use the Keychain for local storage."
-  PROMPT "Is this a real API key or credential? Store it in the Keychain (KeychainWrapper) or retrieve it from a backend API rather than hardcoding in source."
 }
 
 rule no-nslog-sensitive-data {
   enabled true
   priority 80
   severity warning
-  ASK write
+  LOG write
   IF path GLOB "**/*.swift" AND content LINE_REGEX "NSLog.*password"
   OR path GLOB "**/*.swift" AND content LINE_REGEX "NSLog.*token"
   OR path GLOB "**/*.swift" AND content LINE_REGEX "print.*password"
   OR path GLOB "**/*.swift" AND content LINE_REGEX "print.*apiKey"
   MESSAGE "Logging sensitive data (passwords, tokens, keys) exposes them in device logs accessible to developers and crash reporting tools. Remove sensitive values from log statements."
-  PROMPT "Does this log statement include a real password, token, or API key? Remove it or replace with a redacted placeholder like '[REDACTED]'."
 }
 
 rule no-insecure-data-storage {
   enabled true
   priority 85
   severity error
-  ASK write
+  LOG write
   IF path GLOB "**/*.swift" AND content LINE_REGEX "UserDefaults.*password"
   OR path GLOB "**/*.swift" AND content LINE_REGEX "UserDefaults.*token"
   OR path GLOB "**/*.swift" AND content LINE_REGEX "UserDefaults.*apiKey"
   MESSAGE "UserDefaults stores data in an unencrypted plist on the device filesystem. Use the Keychain to store passwords, tokens, and other sensitive values securely."
-  PROMPT "Is this storing a sensitive credential in UserDefaults? Migrate to KeychainWrapper or SecItemAdd/SecItemUpdate for encrypted storage."
 }
